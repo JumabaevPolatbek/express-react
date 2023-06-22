@@ -1,26 +1,29 @@
 const tableProducts = `create table if not exists products(
   id int primary key auto_increment,
-  product_name varchar(255) not null,
+  product_name varchar(255) not null CHARACTER SET uft8 COLLATE utf8_general_ci ,
   category_id INT,
   CONSTRAINT ecommerce_category_fk
   FOREIGN KEY (category_id)  REFERENCES category (id),
-  image_path varchar(255) ,
+  image_path varchar(255) not null CHARACTER SET uft8 COLLATE utf8_general_ci ,
   create_at date not null,
   update_at date not null)`;
-const reqCheck = ({ product_name }) =>
-	`EXISTS(SELECT * from products WHERE product_name=${product_name})`;
+
 const reqSqlAdd = ({
 	product_name,
 	category_id,
 	image_url,
-}) =>
-	`INSERT INTO products SET product_name=${product_name} category_id=${category_id} image_path=${image_url}create_at=NOW() update_at=NOW()`;
+}) => {
+	const path = image_url.split(`\'\\'\\`);
+	return `INSERT INTO products (product_name,category_id,image_path,create_at,update_at) VALUES ('${product_name}','${category_id}','${
+		'' + [image_url] + ''
+	}',CURDATE(),CURDATE())`;
+};
 const reqSqlUpdate = ({
 	product_name,
 	product_id,
 	category_id,
 }) =>
-	`UPDATE products SET product_name=${product_name} category_id=${category_id} WHERE id=${product_id}`;
+	`UPDATE products SET product_name='${product_name}', category_id=${category_id} WHERE id=${product_id}`;
 const createTableProducts = (connection) => {
 	connection.query(tableProducts, (err, result) => {
 		if (err) {
@@ -32,32 +35,22 @@ const createTableProducts = (connection) => {
 		}
 	});
 };
-const creatProduct = (
+const createProduct = (
 	{ product_name, category_id, image_url },
 	connection,
 	response
 ) => {
 	connection.query(
-		reqCheck({ product_name }),
+		reqSqlAdd({ product_name, category_id, image_url }),
 		(err, result) => {
 			if (err) {
-				response.send(err.message);
+				response.send({
+					message: err.message,
+				});
 			}
-			connection.query(
-				reqSqlAdd({
-					product_name,
-					category_id,
-					image_url,
-				}),
-				(err, result) => {
-					if (err) {
-						response.send(err.message);
-					}
-					response.send({
-						message: 'Product has created',
-					});
-				}
-			);
+			response.send({
+				message: 'Product has created',
+			});
 		}
 	);
 };
@@ -67,26 +60,33 @@ const updateProduct = (
 	response
 ) => {
 	connection.query(
-		`EXISTS(SELECT * from products WHERE product_name=${product_name} AND product_id!=${product_id})`,
+		`SELECT * from products WHERE product_name='${product_name}'`,
 		(err, result) => {
 			if (err) {
 				response.send(err.message);
 			}
-			connection.query(
-				reqSqlUpdate({
-					product_id,
-					product_name,
-					category_id,
-				}),
-				(err, result) => {
-					if (err) {
-						response.send(err.message);
+			console.log(result.length);
+			if (result.length < 1) {
+				connection.query(
+					reqSqlUpdate({
+						product_id,
+						product_name,
+						category_id,
+					}),
+					(err, result) => {
+						if (err) {
+							response.send(err.message);
+						}
+						response.send({
+							message: `Product has changed ${product_name}`,
+						});
 					}
-					response.send(
-						`Product has changed ${product_name}`
-					);
-				}
-			);
+				);
+			} else {
+				response.send({
+					message: 'Already exists',
+				});
+			}
 		}
 	);
 };
@@ -121,8 +121,9 @@ const getProductById = (
 	);
 };
 module.exports = {
-	creatProduct,
+	createProduct,
 	updateProduct,
 	delProductById,
 	getProductById,
+	createTableProducts,
 };

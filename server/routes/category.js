@@ -12,6 +12,7 @@ const config = require('../db');
 const connect = db.createPool(config);
 const urlEncoded = express.urlencoded({ extended: false });
 
+//get categorys
 categoryRouter.get('/', (request, response) => {
 	connect.getConnection((err, connection) => {
 		if (err) {
@@ -21,47 +22,26 @@ categoryRouter.get('/', (request, response) => {
 			'SELECT * from category',
 			(err, result) => {
 				if (err) {
-					console.log(err);
+					response.send({
+						message: err.message,
+					});
 				}
 				response.send(result);
 			}
 		);
 	});
 });
-
+// create category
 categoryRouter.post('/', (request, response) => {
 	const { category_name } = request.body;
 	connect.getConnection((err, connection) => {
 		if (err) {
 			response.send(err.message);
 		}
-		connection.query(
-			`SELECT * FROM category`,
-			(err, result) => {
-				if (err) {
-					response.send(err.message);
-				}
-				if (
-					result.find(
-						(category) =>
-							category.category_name !==
-							category_name
-					)
-				) {
-					createCategory(
-						connection,
-						category_name,
-						response
-					);
-				} else {
-					response.send({
-						message: 'Already exists',
-					});
-				}
-			}
-		);
+		createCategory(connection, category_name, response);
 	});
 });
+// delete category
 categoryRouter.delete(
 	'/:category_id',
 	(request, response) => {
@@ -78,6 +58,7 @@ categoryRouter.delete(
 		});
 	}
 );
+//update category
 categoryRouter.patch(
 	'/:category_id',
 	(request, response) => {

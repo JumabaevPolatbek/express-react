@@ -1,6 +1,6 @@
 const tableCategory = `CREATE TABLE category(
   id int primary key auto_increment,
-  category_name varchar(255) not null,
+  category_name varchar(255) not null CHARACTER SET uft8 COLLATE utf8_general_ci,
   create_at date not null,
   update_at date not null)`;
 //  WHERE NOT EXISTS(SELECT category_name FROM category WHERE category_name='${category_name}')`

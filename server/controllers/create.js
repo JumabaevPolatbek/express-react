@@ -7,7 +7,7 @@ const pathToEnv = './.env';
 
 const createDb = (connection) => {
 	connection.query(
-		`CREATE DATABASE ecommerce`,
+		`CREATE DATABASE ecommerce CHARACTER SET uft8 COLLATE utf8_general_ci `,
 		function (err, result) {
 			if (err) {
 				connection.release();
